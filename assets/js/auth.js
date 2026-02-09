@@ -4,9 +4,20 @@ import {
   signInWithEmailAndPassword,
   signOut,
   onAuthStateChanged
-} from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
+} from "./firebase-auth-proxy.js";
 
-export function watchAuth(cb){ return onAuthStateChanged(auth, cb); }
-export async function registerAuth(email, password){ return createUserWithEmailAndPassword(auth, email, password); }
-export async function loginAuth(email, password){ return signInWithEmailAndPassword(auth, email, password); }
-export async function logoutAuth(){ return signOut(auth); }
+export function watchAuth(cb){
+  return onAuthStateChanged(auth, cb);
+}
+
+export async function registerAuth(email, password){
+  return createUserWithEmailAndPassword(auth, email, password);
+}
+
+export async function loginAuth(email, password){
+  return signInWithEmailAndPassword(auth, email, password);
+}
+
+export async function logoutAuth(){
+  return signOut(auth);
+}
