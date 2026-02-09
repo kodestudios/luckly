@@ -1,150 +1,193 @@
-import { copyText } from "./util.js";
-import { watchAuth, logoutAuth } from "./auth.js";
-import {
-  getUser,
-  getProfile,
-  updateProfile,
-  getViews,
-  findUidByEmail
-} from "./firestore.js";
-import { ADMIN_EMAILS } from "./admin.js";
-import { uploadUserFile } from "./storage.js";
-import { setActiveTab } from "./ui.js";
-import { discordConnect } from "./discord.js";
-import { BADGES } from "../badges/badges.manifest.js";
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Dashboard · Luckly</title>
 
-const $ = id => document.getElementById(id);
-
-/* DOM */
-const meAvatar = $("meAvatar");
-const meName = $("meName");
-const meSlug = $("meSlug");
-const meEmail = $("meEmail");
-const myLinkChip = $("myLinkChip");
-const viewCount = $("viewCount");
-const btnOpenProfile = $("btnOpenProfile");
-const btnCopyLink = $("btnCopyLink");
-const btnLogout = $("btnLogout");
-const btnDiscord = $("btnDiscord");
-const discordInfo = $("discordInfo");
-const avatarFile = $("avatarFile");
-const btnUploadAvatar = $("btnUploadAvatar");
-const msgAvatar = $("msgAvatar");
-const bio = $("bio");
-const btnSaveBio = $("btnSaveBio");
-const msgBio = $("msgBio");
-const badgeEmail = $("badgeEmail");
-const badgeSelect = $("badgeSelect");
-const btnGiveBadge = $("btnGiveBadge");
-
-/* Tabs */
-const tabs = [...document.querySelectorAll(".tab")];
-const panels = [...document.querySelectorAll(".panel")];
-tabs.forEach(tab => {
-  tab.onclick = () => setActiveTab(tabs, panels, tab.dataset.tab);
-});
-
-/* Logout */
-btnLogout.onclick = async () => {
-  await logoutAuth();
-  location.href = "login.html";
-};
-
-/* Auth */
-watchAuth(async user => {
-  if (!user) return location.href = "login.html";
-
-  console.log("AUTH OK", user.uid);
-
-  await getUser(user.uid);
-  const profile = await getProfile(user.uid);
-  const views = await getViews(user.uid);
-
-  console.log("PROFILE", profile);
-
-  meName.textContent = profile?.displayName || "User";
-  meSlug.textContent = "/" + (profile?.slug || "");
-  meEmail.textContent = user.email || "";
-  myLinkChip.textContent = "/" + (profile?.slug || "");
-  viewCount.textContent = views ?? 0;
-
-  const avatarUrl =
-    profile?.discord?.avatarUrl ||
-    profile?.media?.avatarUrl ||
-    "";
-
-  if (avatarUrl) meAvatar.src = avatarUrl + "?v=" + Date.now();
-
-  const fullLink = profile?.slug
-    ? `https://kodestudios.github.io/luckly/${profile.slug}`
-    : "#";
-
-  btnOpenProfile.href = fullLink;
-  btnCopyLink.onclick = () => copyText(fullLink);
-
-  discordInfo.textContent = profile?.discord?.connected
-    ? `Discord: ${profile.discord.username}`
-    : "Discord: no conectado";
-
-  btnDiscord.onclick = () => discordConnect("TU_PROJECT_ID");
-
-  bio.value = profile?.bio || "";
-  btnSaveBio.onclick = async () => {
-    await updateProfile(user.uid, { bio: bio.value });
-    msgBio.textContent = "Bio guardada ✔";
-  };
-
-  btnUploadAvatar.onclick = async () => {
-    const file = avatarFile.files?.[0];
-    if (!file) return;
-
-    msgAvatar.textContent = "Subiendo…";
-    const url = await uploadUserFile(user.uid, file, "avatar");
-    await updateProfile(user.uid, {
-      media: { ...profile.media, avatarUrl: url }
-    });
-    meAvatar.src = url + "?v=" + Date.now();
-    msgAvatar.textContent = "Avatar actualizado ✔";
-  };
-
-  const isAdmin = ADMIN_EMAILS.includes((user.email || "").toLowerCase());
-  const adminTab = document.querySelector('[data-tab="admin"]');
-
-  if (!isAdmin) {
-    if (adminTab) adminTab.style.display = "none";
-    return;
-  }
-
-  badgeSelect.innerHTML = "";
-  BADGES.forEach(b => {
-    const opt = document.createElement("option");
-    opt.value = b.key;
-    opt.textContent = b.name;
-    badgeSelect.appendChild(opt);
-  });
-
-  btnGiveBadge.onclick = async () => {
-    const email = badgeEmail.value.trim();
-    if (!email) return;
-
-    const badge = BADGES.find(b => b.key === badgeSelect.value);
-    if (!badge) return;
-
-    const uid = await findUidByEmail(email);
-    if (!uid) return;
-
-    const target = await getProfile(uid);
-    const current = target?.badges || [];
-
-    if (current.some(b => b.key === badge.key)) {
-      alert("La insignia ya existe");
-      return;
+  <style>
+    :root{
+      --bg:#050505;
+      --text:#EDEDED;
+      --muted:rgba(237,237,237,.75);
+      --stroke:rgba(255,255,255,.12);
+      --card:rgba(0,0,0,.45);
+      --accent:rgba(255,208,0,.22);
+      --accentStroke:rgba(255,208,0,.45);
     }
 
-    await updateProfile(uid, {
-      badges: [...current, badge]
-    });
+    *{margin:0;padding:0;box-sizing:border-box;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
 
-    alert("Insignia asignada ✔");
-  };
-});
+    body{
+      min-height:100vh;
+      background:
+        radial-gradient(900px 420px at 20% 10%, rgba(255,208,0,.28), transparent 60%),
+        radial-gradient(900px 420px at 80% 30%, rgba(255,208,0,.18), transparent 60%),
+        radial-gradient(900px 420px at 50% 80%, rgba(255,208,0,.10), transparent 60%),
+        var(--bg);
+      color:var(--text);
+    }
+
+    a{color:inherit;text-decoration:none}
+    .container{max-width:1200px;margin:0 auto;padding:20px}
+
+    /* ===== TOPBAR ===== */
+    .topbar{
+      display:flex;justify-content:space-between;align-items:center;
+      padding:14px 18px;border-radius:18px;
+      background:rgba(0,0,0,.45);
+      border:1px solid var(--stroke);
+      backdrop-filter:blur(16px);
+      margin-top:20px;
+    }
+
+    .btn{
+      padding:10px 18px;border-radius:999px;
+      border:1px solid rgba(255,255,255,.18);
+      background:rgba(255,255,255,.06);
+      color:var(--text);cursor:pointer;
+    }
+    .btn.primary{background:var(--accent);border-color:var(--accentStroke)}
+
+    /* ===== LAYOUT ===== */
+    .layout{display:grid;grid-template-columns:360px 1fr;gap:14px;margin-top:14px}
+    @media(max-width:900px){.layout{grid-template-columns:1fr}}
+
+    .card{
+      background:var(--card);
+      border:1px solid var(--stroke);
+      border-radius:22px;
+      padding:18px;
+      backdrop-filter:blur(18px);
+    }
+
+    /* ===== SIDEBAR ===== */
+    .userbox{display:flex;gap:12px;align-items:center}
+    .avatar-wrap{
+      width:92px;height:92px;border-radius:50%;
+      overflow:hidden;border:1px solid var(--stroke);
+      background:rgba(255,255,255,.04);
+    }
+    .avatar{width:100%;height:100%;object-fit:cover}
+
+    .title{font-weight:900}
+    .muted{color:var(--muted)}
+
+    .menu{display:flex;flex-direction:column;gap:10px;margin-top:12px}
+    .tab{
+      padding:12px 14px;border-radius:16px;
+      border:1px solid var(--stroke);
+      background:rgba(255,255,255,.05);
+      cursor:pointer;
+    }
+    .tab.active{background:rgba(255,208,0,.12)}
+
+    /* ===== PANELS ===== */
+    .panel{display:none}
+    .panel.show{display:block}
+
+    label{display:block;margin:12px 0 6px}
+    input, textarea{
+      width:100%;padding:12px;border-radius:14px;
+      background:rgba(255,255,255,.05);
+      border:1px solid var(--stroke);
+      color:var(--text);
+    }
+    textarea{resize:vertical}
+
+    .row{display:flex;gap:10px;align-items:center;margin-top:12px;flex-wrap:wrap}
+    .chip{padding:10px 12px;border-radius:999px;border:1px solid var(--stroke)}
+  </style>
+</head>
+
+<body>
+<div class="container">
+
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <div class="title">luckly</div>
+    <div>
+      <a id="btnOpenProfile" class="btn">Ver mi perfil</a>
+      <button id="btnLogout" class="btn">Salir</button>
+    </div>
+  </header>
+
+  <div class="layout">
+
+    <!-- SIDEBAR -->
+    <aside class="card">
+      <div class="userbox">
+        <div class="avatar-wrap">
+          <img id="meAvatar" class="avatar">
+        </div>
+        <div>
+          <div class="title" id="meName">Cargando…</div>
+          <div class="muted" id="meSlug"></div>
+          <div class="muted" id="meEmail"></div>
+        </div>
+      </div>
+
+      <div class="menu">
+        <button class="tab active" data-tab="account">Account</button>
+        <button class="tab" data-tab="customize">Customize</button>
+        <button class="tab" data-tab="admin">Admin</button>
+      </div>
+
+      <div class="row">
+        <button id="btnDiscord" class="btn primary">Conectar Discord</button>
+        <div class="muted" id="discordInfo">Discord: no conectado</div>
+      </div>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="card">
+
+      <!-- ACCOUNT -->
+      <section class="panel show" id="panel-account">
+        <div class="title">Account</div>
+        <div class="row">
+          <div class="chip" id="myLinkChip">/---</div>
+          <button id="btnCopyLink" class="btn">Copiar</button>
+        </div>
+        <div class="row">
+          <div class="muted">Vistas:</div>
+          <div id="viewCount">0</div>
+        </div>
+      </section>
+
+      <!-- CUSTOMIZE -->
+      <section class="panel" id="panel-customize">
+        <div class="title">Customize</div>
+
+        <label>Avatar (máx 1 MB)</label>
+        <input id="avatarFile" type="file" accept="image/*">
+        <button id="btnUploadAvatar" class="btn primary">Subir avatar</button>
+        <div id="msgAvatar" class="muted"></div>
+
+        <label>Bio</label>
+        <textarea id="bio" rows="4"></textarea>
+        <button id="btnSaveBio" class="btn primary">Guardar bio</button>
+        <div id="msgBio" class="muted"></div>
+      </section>
+
+      <!-- ADMIN -->
+      <section class="panel" id="panel-admin">
+        <div class="title">Admin</div>
+        <label>Email</label>
+        <input id="badgeEmail">
+        <label>Insignia</label>
+        <select id="badgeSelect">
+          <option value="diamond">diamond</option>
+          <option value="star">star</option>
+        </select>
+        <button id="btnGiveBadge" class="btn primary">Asignar</button>
+        <div id="msgAdmin" class="muted"></div>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<script type="module" src="assets/js/page-dashboard.js"></script>
+</body>
+</html>
