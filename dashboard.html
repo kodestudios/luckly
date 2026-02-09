@@ -31,7 +31,6 @@
     a{color:inherit;text-decoration:none}
     .container{max-width:1200px;margin:0 auto;padding:20px}
 
-    /* ===== TOPBAR ===== */
     .topbar{
       display:flex;justify-content:space-between;align-items:center;
       padding:14px 18px;border-radius:18px;
@@ -49,7 +48,6 @@
     }
     .btn.primary{background:var(--accent);border-color:var(--accentStroke)}
 
-    /* ===== LAYOUT ===== */
     .layout{display:grid;grid-template-columns:360px 1fr;gap:14px;margin-top:14px}
     @media(max-width:900px){.layout{grid-template-columns:1fr}}
 
@@ -61,7 +59,6 @@
       backdrop-filter:blur(18px);
     }
 
-    /* ===== SIDEBAR ===== */
     .userbox{display:flex;gap:12px;align-items:center}
     .avatar-wrap{
       width:92px;height:92px;border-radius:50%;
@@ -82,12 +79,11 @@
     }
     .tab.active{background:rgba(255,208,0,.12)}
 
-    /* ===== PANELS ===== */
     .panel{display:none}
     .panel.show{display:block}
 
     label{display:block;margin:12px 0 6px}
-    input, textarea{
+    input, textarea, select{
       width:100%;padding:12px;border-radius:14px;
       background:rgba(255,255,255,.05);
       border:1px solid var(--stroke);
@@ -103,7 +99,6 @@
 <body>
 <div class="container">
 
-  <!-- TOPBAR -->
   <header class="topbar">
     <div class="title">luckly</div>
     <div>
@@ -114,7 +109,6 @@
 
   <div class="layout">
 
-    <!-- SIDEBAR -->
     <aside class="card">
       <div class="userbox">
         <div class="avatar-wrap">
@@ -139,10 +133,7 @@
       </div>
     </aside>
 
-    <!-- MAIN -->
     <main class="card">
-
-      <!-- ACCOUNT -->
       <section class="panel show" id="panel-account">
         <div class="title">Account</div>
         <div class="row">
@@ -155,11 +146,10 @@
         </div>
       </section>
 
-      <!-- CUSTOMIZE -->
       <section class="panel" id="panel-customize">
         <div class="title">Customize</div>
 
-        <label>Avatar (máx 1 MB)</label>
+        <label>Avatar</label>
         <input id="avatarFile" type="file" accept="image/*">
         <button id="btnUploadAvatar" class="btn primary">Subir avatar</button>
         <div id="msgAvatar" class="muted"></div>
@@ -170,24 +160,24 @@
         <div id="msgBio" class="muted"></div>
       </section>
 
-      <!-- ADMIN -->
       <section class="panel" id="panel-admin">
         <div class="title">Admin</div>
+
         <label>Email</label>
         <input id="badgeEmail">
+
         <label>Insignia</label>
-        <select id="badgeSelect">
-          <option value="diamond">diamond</option>
-          <option value="star">star</option>
-        </select>
+        <select id="badgeSelect"></select>
+
         <button id="btnGiveBadge" class="btn primary">Asignar</button>
         <div id="msgAdmin" class="muted"></div>
       </section>
-
     </main>
   </div>
 </div>
 
-<script type="module" src="assets/js/page-dashboard.js"></script>
+<!-- 🔥 ESTA LÍNEA ES LA CLAVE -->
+<script type="module" src="./assets/js/page-dashboard.js"></script>
+
 </body>
 </html>
