@@ -7,11 +7,24 @@ const btn = $("btnLogin");
 const msg = $("msg");
 
 btn.onclick = async () => {
-  msg.textContent = "Entrando...";
-  try{
-    await loginAuth(email.value.trim(), password.value);
-    location.href = "dashboard.html";
-  }catch(e){
-    msg.textContent = e.message || "Error";
+  msg.textContent = "Entrando…";
+  btn.disabled = true;
+
+  try {
+    await loginAuth(
+      email.value.trim(),
+      password.value // ❗ NO trim
+    );
+
+    // dejamos que Firebase confirme auth
+    setTimeout(() => {
+      location.href = "dashboard.html";
+    }, 300);
+
+  } catch (e) {
+    console.error(e);
+    msg.textContent = "Correo o contraseña incorrectos";
+    btn.disabled = false;
   }
 };
+
