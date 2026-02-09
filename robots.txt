@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://kodestudios.github.io/luckly/sitemap.xml

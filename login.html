@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Iniciar sesión</title>
+  <style>
+    :root{
+      --bg:#050505;--text:#EDEDED;--muted:rgba(237,237,237,.75);
+      --stroke:rgba(255,255,255,.12);--card:rgba(0,0,0,.45);
+      --accent:rgba(255,208,0,.22);--accentStroke:rgba(255,208,0,.45);
+    }
+    *{margin:0;padding:0;box-sizing:border-box;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+    body{
+      min-height:100vh;background:
+        radial-gradient(900px 420px at 20% 10%, rgba(255,208,0,.28), transparent 60%),
+        radial-gradient(900px 420px at 80% 30%, rgba(255,208,0,.18), transparent 60%),
+        radial-gradient(900px 420px at 50% 80%, rgba(255,208,0,.10), transparent 60%),
+        var(--bg);
+      color:var(--text);
+    }
+    .container{max-width:520px;margin:0 auto;padding:20px}
+    .top{display:flex;justify-content:space-between;align-items:center;margin-top:20px}
+    a{color:inherit;text-decoration:none}
+    .card{
+      margin-top:26px;background:var(--card);border:1px solid var(--stroke);
+      border-radius:22px;padding:20px;backdrop-filter: blur(18px);
+    }
+    h1{font-size:22px;font-weight:900;margin-bottom:8px}
+    p{color:var(--muted);margin-bottom:16px;line-height:1.5}
+    label{display:block;margin:10px 0 6px;color:rgba(237,237,237,.9)}
+    input{
+      width:100%;padding:12px 14px;border-radius:14px;border:1px solid var(--stroke);
+      background:rgba(255,255,255,.05);color:var(--text);outline:none;
+    }
+    .row{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;align-items:center}
+    .btn{
+      padding:10px 18px;border-radius:999px;border:1px solid rgba(255,255,255,.18);
+      background:rgba(255,255,255,.06);color:var(--text);cursor:pointer;transition:.25s
+    }
+    .btn:hover{background:rgba(255,255,255,.12)}
+    .btn.primary{background:var(--accent);border-color:var(--accentStroke)}
+    .msg{color:var(--muted)}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="top">
+      <div style="font-weight:900">luckly</div>
+      <a class="btn" href="register.html">Crear cuenta</a>
+    </div>
+
+    <div class="card">
+      <h1>Iniciar sesión</h1>
+      <p>Entrá a tu panel para personalizar tu perfil.</p>
+
+      <label>Email</label>
+      <input id="email" type="email" placeholder="correo@algo.com">
+
+      <label>Contraseña</label>
+      <input id="password" type="password" placeholder="********">
+
+      <div class="row">
+        <button id="btnLogin" class="btn primary">Entrar</button>
+        <a class="btn" href="index.html">Volver</a>
+        <div id="msg" class="msg"></div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="assets/js/page-login.js"></script>
+</body>
+</html>
