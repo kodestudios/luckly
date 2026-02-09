@@ -6,71 +6,55 @@ import {
   getProfile,
   updateProfile,
   getViews,
-  findUidByEmail,
-  addBadge
+  findUidByEmail
 } from "./firestore.js";
 import { uploadUserFile } from "./storage.js";
 import { setActiveTab, renderSocials } from "./ui.js";
 import { discordConnect } from "./discord.js";
+import { BADGES } from "../badges/badges.manifest.js";
 
 /* ==========================
-   UTIL: COMPRESIÓN DE AVATAR
-   (< 1 MB GARANTIZADO)
+   UTIL: COMPRESIÓN AVATAR
 ========================== */
 function compressImage(file, maxSize = 1024, quality = 0.8) {
   return new Promise((resolve, reject) => {
-    if (!file.type.startsWith("image/")) {
-      reject("Archivo no válido");
-      return;
-    }
+    if (!file.type.startsWith("image/")) return reject("No es imagen");
 
     const img = new Image();
     const reader = new FileReader();
-
     reader.onload = e => (img.src = e.target.result);
-    reader.onerror = reject;
+    reader.readAsDataURL(file);
 
     img.onload = () => {
       let { width, height } = img;
-
       if (width > height && width > maxSize) {
-        height = Math.round(height * (maxSize / width));
+        height *= maxSize / width;
         width = maxSize;
       } else if (height > maxSize) {
-        width = Math.round(width * (maxSize / height));
+        width *= maxSize / height;
         height = maxSize;
       }
 
       const canvas = document.createElement("canvas");
       canvas.width = width;
       canvas.height = height;
-
-      const ctx = canvas.getContext("2d");
-      ctx.drawImage(img, 0, 0, width, height);
+      canvas.getContext("2d").drawImage(img, 0, 0, width, height);
 
       canvas.toBlob(
-        blob => {
-          if (!blob) reject("Error al comprimir");
-          resolve(blob);
-        },
+        blob => blob ? resolve(blob) : reject("Error"),
         "image/jpeg",
         quality
       );
     };
-
-    reader.readAsDataURL(file);
   });
 }
 
 /* ==========================
-   DOM: TABS
+   TABS
 ========================== */
 const tabs = [...document.querySelectorAll(".tab")];
 const panels = [...document.querySelectorAll(".panel")];
-
-tabs.forEach(tab => {
-  tab.onclick = () => setActiveTab(tabs, panels, tab.dataset.tab);
-});
+tabs.forEach(t => t.onclick = () => setActiveTab(tabs, panels, t.dataset.tab));
 
 /* ==========================
    LOGOUT
@@ -81,156 +65,85 @@ document.getElementById("btnLogout").onclick = async () => {
 };
 
 /* ==========================
-   AUTH + DASHBOARD INIT
+   AUTH
 ========================== */
-watchAuth(async (user) => {
-  if (!user) {
-    location.href = "login.html";
-    return;
-  }
+watchAuth(async user => {
+  if (!user) return (location.href = "login.html");
 
   await getUser(user.uid);
   let profile = await getProfile(user.uid);
   const views = await getViews(user.uid);
 
-  /* ==========================
-     DISCORD CALLBACK
-  ========================= */
-  const pending = localStorage.getItem("discord_pending");
-  if (pending) {
-    const discord = JSON.parse(pending);
-    const isGif = discord.avatar?.startsWith("a_");
-    const ext = isGif ? "gif" : "png";
+  /* ===== INFO ===== */
+  meEmail.textContent = user.email || "";
+  meName.textContent = profile?.displayName || "User";
+  meSlug.textContent = "/" + (profile?.slug || "");
+  myLinkChip.textContent = "/" + (profile?.slug || "");
+  viewCount.textContent = views;
 
-    const avatarUrl = discord.avatar
-      ? `https://cdn.discordapp.com/avatars/${discord.id}/${discord.avatar}.${ext}`
-      : null;
-
-    await updateProfile(user.uid, {
-      discord: {
-        connected: true,
-        id: discord.id,
-        username: discord.username,
-        avatar: discord.avatar,
-        avatarUrl
-      }
-    });
-
-    localStorage.removeItem("discord_pending");
-    location.reload();
-    return;
-  }
-
-  /* ==========================
-     BASIC INFO
-  ========================= */
-  document.getElementById("meEmail").textContent = user.email || "";
-  document.getElementById("meName").textContent = profile?.displayName || "User";
-  document.getElementById("meSlug").textContent = "/" + (profile?.slug || "");
-  document.getElementById("myLinkChip").textContent = "/" + (profile?.slug || "");
-  document.getElementById("viewCount").textContent = String(views);
-
-  /* ==========================
-     AVATAR DISPLAY
-  ========================= */
-  const avatarEl = document.getElementById("meAvatar");
+  /* ===== AVATAR ===== */
   const avatarUrl =
     profile?.discord?.avatarUrl ||
     profile?.media?.avatarUrl ||
     "";
+  if (avatarUrl) meAvatar.src = avatarUrl + "?v=" + Date.now();
 
-  if (avatarUrl) {
-    avatarEl.src = avatarUrl + "?v=" + Date.now();
-  } else {
-    avatarEl.removeAttribute("src");
-  }
-
-  /* ==========================
-     PROFILE LINK
-  ========================= */
+  /* ===== LINK PERFIL ===== */
   const fullLink = profile?.slug
     ? `https://kodestudios.github.io/luckly/${profile.slug}`
     : "#";
+  btnOpenProfile.href = fullLink;
+  btnCopyLink.onclick = () => copyText(fullLink);
 
-  document.getElementById("btnOpenProfile").href = fullLink;
-  document.getElementById("btnCopyLink").onclick = () => copyText(fullLink);
+  /* ===== DISCORD ===== */
+  discordInfo.textContent = profile?.discord?.connected
+    ? `Discord: ${profile.discord.username}`
+    : "Discord: no conectado";
 
-  /* ==========================
-     DISCORD UI
-  ========================= */
-  document.getElementById("discordInfo").textContent =
-    profile?.discord?.connected
-      ? `Discord: ${profile.discord.username}`
-      : "Discord: no conectado";
+  btnDiscord.onclick = () => discordConnect("TU_PROJECT_ID");
 
-  document.getElementById("btnDiscord").onclick = () =>
-    discordConnect("TU_PROJECT_ID");
-
-  /* ==========================
-     BIO
-  ========================= */
-  const bioEl = document.getElementById("bio");
-  bioEl.value = profile?.bio || "";
-
-  document.getElementById("btnSaveBio").onclick = async () => {
-    await updateProfile(user.uid, { bio: bioEl.value });
-    document.getElementById("msgBio").textContent = "Bio guardada ✔";
+  /* ===== BIO ===== */
+  bio.value = profile?.bio || "";
+  btnSaveBio.onclick = async () => {
+    await updateProfile(user.uid, { bio: bio.value });
+    msgBio.textContent = "Bio guardada ✔";
   };
 
-  /* ==========================
-     SOCIALS
-  ========================= */
+  /* ===== SOCIALS ===== */
   let socials = profile?.socials || [];
-  const socialList = document.getElementById("socialList");
-
-  const refreshSocials = async () => {
-    renderSocials(socialList, socials, async (index) => {
-      socials.splice(index, 1);
+  const refreshSocials = () => {
+    renderSocials(socialList, socials, async i => {
+      socials.splice(i, 1);
       await updateProfile(user.uid, { socials });
       refreshSocials();
     });
   };
-
   refreshSocials();
 
-  document.getElementById("btnAddSocial").onclick = async () => {
-    const label = document.getElementById("socialLabel").value.trim();
-    const url = document.getElementById("socialUrl").value.trim();
-    if (!url) return;
-
-    socials.push({ label, url });
+  btnAddSocial.onclick = async () => {
+    if (!socialUrl.value) return;
+    socials.push({ label: socialLabel.value, url: socialUrl.value });
     await updateProfile(user.uid, { socials });
     refreshSocials();
   };
 
-  document.getElementById("btnClearSocials").onclick = async () => {
+  btnClearSocials.onclick = async () => {
     socials = [];
     await updateProfile(user.uid, { socials });
     refreshSocials();
   };
 
-  /* ==========================
-     AVATAR UPLOAD (PRO)
-  ========================= */
-  document.getElementById("btnUploadAvatar").onclick = async () => {
-    const input = document.getElementById("avatarFile");
-    const msg = document.getElementById("msgAvatar");
-    const file = input.files?.[0];
+  /* ===== AVATAR UPLOAD ===== */
+  btnUploadAvatar.onclick = async () => {
+    const file = avatarFile.files?.[0];
     if (!file) return;
 
-    msg.textContent = "Procesando imagen…";
-
+    msgAvatar.textContent = "Procesando…";
     try {
-      const compressed = await compressImage(file);
-
-      if (compressed.size > 1024 * 1024) {
-        msg.textContent = "La imagen es demasiado grande";
-        return;
-      }
-
+      const blob = await compressImage(file);
       const url = await uploadUserFile(
         user.uid,
-        compressed,
+        blob,
         "avatar",
         "image/jpeg"
       );
@@ -239,37 +152,52 @@ watchAuth(async (user) => {
         media: { ...profile.media, avatarUrl: url }
       });
 
-      avatarEl.src = url + "?v=" + Date.now();
-      msg.textContent = "Avatar actualizado ✔";
-      input.value = "";
-
-    } catch (err) {
-      console.error(err);
-      msg.textContent = "Error al subir avatar";
+      meAvatar.src = url + "?v=" + Date.now();
+      msgAvatar.textContent = "Avatar actualizado ✔";
+      avatarFile.value = "";
+    } catch {
+      msgAvatar.textContent = "Error al subir";
     }
   };
 
-  /* ==========================
-     ADMIN
-  ========================= */
+  /* ===== ADMIN ===== */
   const isAdmin = ADMIN_EMAILS.includes((user.email || "").toLowerCase());
-
   if (!isAdmin) {
-    const adminTab = document.querySelector('[data-tab="admin"]');
-    if (adminTab) adminTab.style.display = "none";
-  } else {
-    document.getElementById("btnGiveBadge").onclick = async () => {
-      const email = document.getElementById("badgeEmail").value.trim();
-      const badgeKey = document.getElementById("badgeSelect").value;
-
-      const uid = await findUidByEmail(email);
-      if (!uid) return;
-
-      await addBadge(uid, {
-        key: badgeKey,
-        name: badgeKey,
-        img: `assets/badges/${badgeKey}.png`
-      });
-    };
+    document.querySelector('[data-tab="admin"]').style.display = "none";
+    return;
   }
+
+  // Poblar select desde MANIFEST
+  badgeSelect.innerHTML = "";
+  BADGES.forEach(b => {
+    const opt = document.createElement("option");
+    opt.value = b.key;
+    opt.textContent = b.name;
+    badgeSelect.appendChild(opt);
+  });
+
+  btnGiveBadge.onclick = async () => {
+    const email = badgeEmail.value.trim();
+    if (!email) return;
+
+    const badge = BADGES.find(b => b.key === badgeSelect.value);
+    if (!badge) return;
+
+    const uid = await findUidByEmail(email);
+    if (!uid) return;
+
+    const targetProfile = await getProfile(uid);
+    const current = targetProfile?.badges || [];
+
+    if (current.some(b => b.key === badge.key)) {
+      alert("La insignia ya existe");
+      return;
+    }
+
+    await updateProfile(uid, {
+      badges: [...current, badge]
+    });
+
+    alert("Insignia asignada ✔");
+  };
 });
