@@ -2,7 +2,7 @@ export const BADGES = [
   {
     key: "diamond",
     name: "Diamond",
-    img: "./assets/js/badges/diamond.png"
+    img: "/luckly/assets/js/badges/diamond.png"
   },
   {
     key: "star",
