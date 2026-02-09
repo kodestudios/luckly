@@ -11,8 +11,7 @@ import { ADMIN_EMAILS } from "./admin.js";
 import { uploadUserFile } from "./storage.js";
 import { setActiveTab } from "./ui.js";
 import { discordConnect } from "./discord.js";
-import { BADGES } from "./badges/badges.manifest.js";
-
+import { BADGES } from "./badges/badges.manifest.js"; // 👈 RUTA CORRECTA
 
 /* ==========================
    HELPERS
@@ -54,20 +53,23 @@ const btnGiveBadge = $("btnGiveBadge");
 ========================== */
 const tabs = [...document.querySelectorAll(".tab")];
 const panels = [...document.querySelectorAll(".panel")];
+
 tabs.forEach(tab => {
-  tab.onclick = () => setActiveTab(tabs, panels, tab.dataset.tab);
+  tab.addEventListener("click", () => {
+    setActiveTab(tabs, panels, tab.dataset.tab);
+  });
 });
 
 /* ==========================
    LOGOUT
 ========================== */
-btnLogout.onclick = async () => {
+btnLogout.addEventListener("click", async () => {
   await logoutAuth();
   location.href = "login.html";
-};
+});
 
 /* ==========================
-   AUTH
+   AUTH / INIT
 ========================== */
 watchAuth(async (user) => {
   if (!user) {
@@ -76,7 +78,7 @@ watchAuth(async (user) => {
   }
 
   try {
-    /* ===== USER / PROFILE ===== */
+    /* ===== USER ===== */
     await getUser(user.uid);
     const profile = await getProfile(user.uid);
     const views = await getViews(user.uid);
@@ -88,17 +90,15 @@ watchAuth(async (user) => {
     myLinkChip.textContent = "/" + (profile?.slug || "");
     viewCount.textContent = views ?? 0;
 
-    /* ===== AVATAR ===== */
+    /* ===== AVATAR (🔥 FIX DEFINITIVO) ===== */
     const avatarUrl =
-      profile?.discord?.avatarUrl ||
       profile?.media?.avatarUrl ||
+      profile?.discord?.avatarUrl ||
       "";
 
-    if (avatarUrl) {
-      meAvatar.src = avatarUrl + "?v=" + Date.now();
-    } else {
-      meAvatar.removeAttribute("src");
-    }
+    meAvatar.src = avatarUrl
+      ? avatarUrl + "?v=" + Date.now()
+      : "https://dummyimage.com/128x128/444/fff&text=User";
 
     /* ===== PROFILE LINK ===== */
     const fullLink = profile?.slug
@@ -133,7 +133,7 @@ watchAuth(async (user) => {
         const url = await uploadUserFile(user.uid, file, "avatar");
 
         await updateProfile(user.uid, {
-          media: { ...profile.media, avatarUrl: url }
+          media: { ...(profile.media || {}), avatarUrl: url }
         });
 
         meAvatar.src = url + "?v=" + Date.now();
@@ -150,18 +150,18 @@ watchAuth(async (user) => {
       (user.email || "").toLowerCase()
     );
 
+    const adminTab = document.querySelector('[data-tab="admin"]');
     if (!isAdmin) {
-      const adminTab = document.querySelector('[data-tab="admin"]');
       if (adminTab) adminTab.style.display = "none";
       return;
     }
 
-    // llenar select de insignias
+    /* === CARGAR INSIGNIAS === */
     badgeSelect.innerHTML = "";
-    BADGES.forEach(b => {
+    BADGES.forEach(badge => {
       const opt = document.createElement("option");
-      opt.value = b.key;
-      opt.textContent = b.name;
+      opt.value = badge.key;
+      opt.textContent = badge.name;
       badgeSelect.appendChild(opt);
     });
 
@@ -195,4 +195,3 @@ watchAuth(async (user) => {
     alert("Error en dashboard. Revisá la consola.");
   }
 });
-
