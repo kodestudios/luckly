@@ -11,7 +11,8 @@ import { ADMIN_EMAILS } from "./admin.js";
 import { uploadUserFile } from "./storage.js";
 import { setActiveTab } from "./ui.js";
 import { discordConnect } from "./discord.js";
-import { BADGES } from "../badges/badges.manifest.js";
+import { BADGES } from "./badges/badges.manifest.js";
+
 
 /* ==========================
    HELPERS
@@ -194,3 +195,4 @@ watchAuth(async (user) => {
     alert("Error en dashboard. Revisá la consola.");
   }
 });
+
