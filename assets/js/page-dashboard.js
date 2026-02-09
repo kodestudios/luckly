@@ -113,7 +113,7 @@ watchAuth(async (user) => {
       ? `Discord: ${profile.discord.username}`
       : "Discord: no conectado";
 
-    btnDiscord.onclick = () => discordConnect("TU_PROJECT_ID");
+    btnDiscord.onclick = () => discordConnect("1470166797708955758");
 
     /* ===== BIO ===== */
     bio.value = profile?.bio || "";
@@ -195,4 +195,5 @@ watchAuth(async (user) => {
     alert("Error en dashboard. Revisá la consola.");
   }
 });
+
 
