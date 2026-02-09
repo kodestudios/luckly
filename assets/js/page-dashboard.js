@@ -102,7 +102,7 @@ watchAuth(async (user) => {
 
     /* ===== PROFILE LINK ===== */
     const fullLink = profile?.slug
-      ? `https://kodestudios.github.io/luckly/${profile.slug}`
+      ? `https://kodestudios.github.io/luckly/profile.html?s=${profile.slug}`
       : "#";
 
     btnOpenProfile.href = fullLink;
@@ -195,3 +195,4 @@ watchAuth(async (user) => {
     alert("Error en dashboard. Revisá la consola.");
   }
 });
+
