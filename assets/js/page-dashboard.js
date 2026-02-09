@@ -14,7 +14,7 @@ import { discordConnect } from "./discord.js";
 import { BADGES } from "../badges/badges.manifest.js";
 
 /* ==========================
-   DOM HELPERS
+   HELPERS
 ========================== */
 const $ = (id) => document.getElementById(id);
 
@@ -75,11 +75,12 @@ watchAuth(async (user) => {
   }
 
   try {
+    /* ===== USER / PROFILE ===== */
     await getUser(user.uid);
     const profile = await getProfile(user.uid);
     const views = await getViews(user.uid);
 
-    /* ===== INFO ===== */
+    /* ===== BASIC INFO ===== */
     meName.textContent = profile?.displayName || "User";
     meSlug.textContent = "/" + (profile?.slug || "");
     meEmail.textContent = user.email || "";
@@ -94,9 +95,11 @@ watchAuth(async (user) => {
 
     if (avatarUrl) {
       meAvatar.src = avatarUrl + "?v=" + Date.now();
+    } else {
+      meAvatar.removeAttribute("src");
     }
 
-    /* ===== LINK PERFIL ===== */
+    /* ===== PROFILE LINK ===== */
     const fullLink = profile?.slug
       ? `https://kodestudios.github.io/luckly/${profile.slug}`
       : "#";
@@ -127,6 +130,7 @@ watchAuth(async (user) => {
 
       try {
         const url = await uploadUserFile(user.uid, file, "avatar");
+
         await updateProfile(user.uid, {
           media: { ...profile.media, avatarUrl: url }
         });
@@ -146,11 +150,12 @@ watchAuth(async (user) => {
     );
 
     if (!isAdmin) {
-      document.querySelector('[data-tab="admin"]').style.display = "none";
+      const adminTab = document.querySelector('[data-tab="admin"]');
+      if (adminTab) adminTab.style.display = "none";
       return;
     }
 
-    // Poblar select de insignias
+    // llenar select de insignias
     badgeSelect.innerHTML = "";
     BADGES.forEach(b => {
       const opt = document.createElement("option");
@@ -186,6 +191,6 @@ watchAuth(async (user) => {
 
   } catch (err) {
     console.error("DASHBOARD ERROR:", err);
-    alert("Error en dashboard. Revisá consola.");
+    alert("Error en dashboard. Revisá la consola.");
   }
 });
