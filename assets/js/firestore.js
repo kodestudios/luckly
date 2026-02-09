@@ -1,3 +1,4 @@
+// assets/js/firestore.js
 import { db } from "./firebase.js";
 import {
   doc, getDoc, updateDoc, runTransaction,
@@ -5,6 +6,9 @@ import {
   collection, query, where, getDocs
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
+/* ==========================
+   USER CREATION
+========================== */
 export async function createUserData({ uid, email, slug, displayName }){
   await runTransaction(db, async (tx) => {
     const slugRef = doc(db, "slugs", slug);
@@ -14,17 +18,32 @@ export async function createUserData({ uid, email, slug, displayName }){
     tx.set(slugRef, { uid, slug, createdAt: serverTimestamp() });
 
     tx.set(doc(db, "users", uid), {
-      email, slug, displayName, role: "user", createdAt: serverTimestamp()
+      email,
+      slug,
+      displayName,
+      role: "user",
+      createdAt: serverTimestamp()
     });
 
     tx.set(doc(db, "profiles", uid), {
-      uid, slug, displayName,
+      uid,
+      slug,
+      displayName,
       bio: "Bienvenido!",
       theme: { primary: "#FFD000" },
       socials: [],
-      media: { avatarUrl: "", videoUrl: "", audioUrl: "" },
+      media: {
+        avatarUrl: "",
+        videoUrl: "",
+        audioUrl: ""
+      },
       badges: [],
-      discord: { connected: false, id: "", username: "", avatar: "" },
+      discord: {
+        connected: false,
+        id: "",
+        username: "",
+        avatar: ""
+      },
       updatedAt: serverTimestamp()
     });
 
@@ -32,6 +51,9 @@ export async function createUserData({ uid, email, slug, displayName }){
   });
 }
 
+/* ==========================
+   GETTERS
+========================== */
 export async function getUser(uid){
   const snap = await getDoc(doc(db, "users", uid));
   return snap.exists() ? snap.data() : null;
@@ -42,22 +64,30 @@ export async function getProfile(uid){
   return snap.exists() ? snap.data() : null;
 }
 
-export async function updateProfile(uid, data){
-  await updateDoc(doc(db, "profiles", uid), { ...data, updatedAt: serverTimestamp() });
-}
-
 export async function getUidBySlug(slug){
   const snap = await getDoc(doc(db, "slugs", slug));
   return snap.exists() ? snap.data().uid : null;
 }
 
-export async function incView(uid){
-  await updateDoc(doc(db, "views", uid), { count: increment(1) });
-}
-
 export async function getViews(uid){
   const snap = await getDoc(doc(db, "views", uid));
   return snap.exists() ? (snap.data().count || 0) : 0;
+}
+
+/* ==========================
+   UPDATES
+========================== */
+export async function updateProfile(uid, data){
+  await updateDoc(doc(db, "profiles", uid), {
+    ...data,
+    updatedAt: serverTimestamp()
+  });
+}
+
+export async function incView(uid){
+  await updateDoc(doc(db, "views", uid), {
+    count: increment(1)
+  });
 }
 
 export async function findUidByEmail(email){
@@ -73,3 +103,11 @@ export async function addBadge(uid, badgeObj){
     updatedAt: serverTimestamp()
   });
 }
+
+/* ==========================
+   DEBUG (EXPOSICIÓN GLOBAL)
+   ⚠️ SOLO PARA DEV
+========================== */
+window.getProfile = getProfile;
+window.getUidBySlug = getUidBySlug;
+window.findUidByEmail = findUidByEmail;
