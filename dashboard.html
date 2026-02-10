@@ -93,6 +93,7 @@
 
     .row{display:flex;gap:10px;align-items:center;margin-top:12px;flex-wrap:wrap}
     .chip{padding:10px 12px;border-radius:999px;border:1px solid var(--stroke)}
+    .link-item{display:flex;justify-content:space-between;gap:10px;margin-top:8px}
   </style>
 </head>
 
@@ -156,15 +157,32 @@
       <section class="panel" id="panel-customize">
         <div class="title">Customize</div>
 
+        <!-- AVATAR -->
         <label>Avatar</label>
         <input id="avatarFile" type="file" accept="image/*">
         <button id="btnUploadAvatar" class="btn primary">Subir avatar</button>
         <div id="msgAvatar" class="muted"></div>
 
+        <!-- BIO -->
         <label>Bio</label>
         <textarea id="bio" rows="4"></textarea>
         <button id="btnSaveBio" class="btn primary">Guardar bio</button>
         <div id="msgBio" class="muted"></div>
+
+        <hr style="margin:20px 0;border-color:rgba(255,255,255,.08)">
+
+        <!-- LINKS / REDES -->
+        <div class="title">Redes y enlaces</div>
+
+        <label>URL</label>
+        <input id="linkUrl" placeholder="https://instagram.com/usuario">
+
+        <label>Nombre (opcional)</label>
+        <input id="linkLabel" placeholder="Instagram">
+
+        <button id="btnAddLink" class="btn primary">Agregar enlace</button>
+
+        <div id="linksList" class="muted" style="margin-top:12px"></div>
       </section>
 
       <!-- ADMIN -->
