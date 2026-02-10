@@ -100,8 +100,8 @@
 <div class="container">
 
   <header class="topbar">
-    <div class="title">luckly</div>
-    <div>
+    <div class="title">luckly dashboard</div>
+    <div class="row">
       <a id="btnOpenProfile" class="btn">Ver mi perfil</a>
       <button id="btnLogout" class="btn">Salir</button>
     </div>
@@ -109,6 +109,7 @@
 
   <div class="layout">
 
+    <!-- SIDEBAR -->
     <aside class="card">
       <div class="userbox">
         <div class="avatar-wrap">
@@ -133,19 +134,25 @@
       </div>
     </aside>
 
+    <!-- MAIN -->
     <main class="card">
+
+      <!-- ACCOUNT -->
       <section class="panel show" id="panel-account">
         <div class="title">Account</div>
+
         <div class="row">
           <div class="chip" id="myLinkChip">/---</div>
-          <button id="btnCopyLink" class="btn">Copiar</button>
+          <button id="btnCopyLink" class="btn">Copiar link</button>
         </div>
+
         <div class="row">
-          <div class="muted">Vistas:</div>
+          <div class="muted">Vistas</div>
           <div id="viewCount">0</div>
         </div>
       </section>
 
+      <!-- CUSTOMIZE -->
       <section class="panel" id="panel-customize">
         <div class="title">Customize</div>
 
@@ -160,25 +167,26 @@
         <div id="msgBio" class="muted"></div>
       </section>
 
+      <!-- ADMIN -->
       <section class="panel" id="panel-admin">
         <div class="title">Admin</div>
 
-        <label>Email</label>
-        <input id="badgeEmail">
+        <label>Email del usuario</label>
+        <input id="badgeEmail" placeholder="usuario@email.com">
 
         <label>Insignia</label>
         <select id="badgeSelect"></select>
 
-        <button id="btnGiveBadge" class="btn primary">Asignar</button>
+        <button id="btnGiveBadge" class="btn primary">Asignar insignia</button>
         <div id="msgAdmin" class="muted"></div>
       </section>
+
     </main>
   </div>
 </div>
 
-<!-- 🔥 ESTA LÍNEA ES LA CLAVE -->
+<!-- JS DASHBOARD -->
 <script type="module" src="./assets/js/page-dashboard.js"></script>
 
 </body>
 </html>
-
