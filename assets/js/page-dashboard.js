@@ -11,7 +11,7 @@ import { ADMIN_EMAILS } from "./admin.js";
 import { uploadUserFile } from "./storage.js";
 import { setActiveTab } from "./ui.js";
 import { discordConnect } from "./discord.js";
-import { BADGES } from "./badges/badges.manifest.js"; // 👈 RUTA CORRECTA
+import { BADGES } from "./badges/badges.manifest.js";
 
 /* ==========================
    HELPERS
@@ -44,6 +44,13 @@ const bio = $("bio");
 const btnSaveBio = $("btnSaveBio");
 const msgBio = $("msgBio");
 
+/* LINKS */
+const linkUrl = $("linkUrl");
+const linkLabel = $("linkLabel");
+const btnAddLink = $("btnAddLink");
+const linksList = $("linksList");
+
+/* ADMIN */
 const badgeEmail = $("badgeEmail");
 const badgeSelect = $("badgeSelect");
 const btnGiveBadge = $("btnGiveBadge");
@@ -63,10 +70,10 @@ tabs.forEach(tab => {
 /* ==========================
    LOGOUT
 ========================== */
-btnLogout.addEventListener("click", async () => {
+btnLogout.onclick = async () => {
   await logoutAuth();
   location.href = "login.html";
-});
+};
 
 /* ==========================
    AUTH / INIT
@@ -78,9 +85,8 @@ watchAuth(async (user) => {
   }
 
   try {
-    /* ===== USER ===== */
     await getUser(user.uid);
-    const profile = await getProfile(user.uid);
+    let profile = await getProfile(user.uid);
     const views = await getViews(user.uid);
 
     /* ===== BASIC INFO ===== */
@@ -90,7 +96,7 @@ watchAuth(async (user) => {
     myLinkChip.textContent = "/" + (profile?.slug || "");
     viewCount.textContent = views ?? 0;
 
-    /* ===== AVATAR (🔥 FIX DEFINITIVO) ===== */
+    /* ===== AVATAR ===== */
     const avatarUrl =
       profile?.media?.avatarUrl ||
       profile?.discord?.avatarUrl ||
@@ -98,7 +104,7 @@ watchAuth(async (user) => {
 
     meAvatar.src = avatarUrl
       ? avatarUrl + "?v=" + Date.now()
-      : "https://dummyimage.com/128x128/444/fff&text=User";
+      : "./assets/img/avatar-placeholder.png";
 
     /* ===== PROFILE LINK ===== */
     const fullLink = profile?.slug
@@ -120,32 +126,108 @@ watchAuth(async (user) => {
     btnSaveBio.onclick = async () => {
       await updateProfile(user.uid, { bio: bio.value });
       msgBio.textContent = "Bio guardada ✔";
+      alert("Bio guardada ✔");
     };
 
-    /* ===== AVATAR UPLOAD ===== */
+    /* ==========================
+       AVATAR UPLOAD (FIX TOTAL)
+    ========================== */
     btnUploadAvatar.onclick = async () => {
       const file = avatarFile.files?.[0];
-      if (!file) return;
+      if (!file) {
+        msgAvatar.textContent = "Seleccioná una imagen";
+        return;
+      }
 
       msgAvatar.textContent = "Subiendo…";
+      btnUploadAvatar.disabled = true;
 
       try {
         const url = await uploadUserFile(user.uid, file, "avatar");
+        if (!url) throw new Error("URL no recibida");
 
         await updateProfile(user.uid, {
-          media: { ...(profile.media || {}), avatarUrl: url }
+          media: {
+            ...(profile.media || {}),
+            avatarUrl: url
+          }
         });
 
         meAvatar.src = url + "?v=" + Date.now();
+        localStorage.setItem("avatarUpdated", "1");
+
         msgAvatar.textContent = "Avatar actualizado ✔";
+        alert("Avatar actualizado correctamente ✔");
         avatarFile.value = "";
-      } catch (e) {
-        console.error(e);
+      } catch (err) {
+        console.error("AVATAR ERROR:", err);
         msgAvatar.textContent = "Error al subir avatar";
+        alert("Error al subir avatar");
+      } finally {
+        btnUploadAvatar.disabled = false;
       }
     };
 
-    /* ===== ADMIN / BADGES ===== */
+    /* ==========================
+       LINKS / REDES
+    ========================== */
+    function renderLinksList() {
+      linksList.innerHTML = "";
+      const links = profile.links || [];
+
+      if (!links.length) {
+        linksList.textContent = "No hay enlaces aún";
+        return;
+      }
+
+      links.forEach((l, i) => {
+        const div = document.createElement("div");
+        div.className = "link-item";
+        div.innerHTML = `
+          <span>${l.label || l.url}</span>
+          <button class="btn">Eliminar</button>
+        `;
+
+        div.querySelector("button").onclick = async () => {
+          const updated = links.filter((_, idx) => idx !== i);
+          await updateProfile(user.uid, { links: updated });
+          profile.links = updated;
+          renderLinksList();
+          localStorage.setItem("linksUpdated", "1");
+        };
+
+        linksList.appendChild(div);
+      });
+    }
+
+    renderLinksList();
+
+    btnAddLink.onclick = async () => {
+      const url = linkUrl.value.trim();
+      const label = linkLabel.value.trim();
+
+      if (!url) {
+        alert("Poné un link válido");
+        return;
+      }
+
+      const links = profile.links || [];
+      links.push({ url, label });
+
+      await updateProfile(user.uid, { links });
+      profile.links = links;
+
+      linkUrl.value = "";
+      linkLabel.value = "";
+
+      renderLinksList();
+      localStorage.setItem("linksUpdated", "1");
+      alert("Enlace agregado ✔");
+    };
+
+    /* ==========================
+       ADMIN / BADGES
+    ========================== */
     const isAdmin = ADMIN_EMAILS.includes(
       (user.email || "").toLowerCase()
     );
@@ -156,7 +238,6 @@ watchAuth(async (user) => {
       return;
     }
 
-    /* === CARGAR INSIGNIAS === */
     badgeSelect.innerHTML = "";
     BADGES.forEach(badge => {
       const opt = document.createElement("option");
@@ -167,13 +248,13 @@ watchAuth(async (user) => {
 
     btnGiveBadge.onclick = async () => {
       const email = badgeEmail.value.trim();
-      if (!email) return;
+      if (!email) return alert("Ingresá un email");
 
       const badge = BADGES.find(b => b.key === badgeSelect.value);
       if (!badge) return;
 
       const uid = await findUidByEmail(email);
-      if (!uid) return;
+      if (!uid) return alert("Usuario no encontrado");
 
       const targetProfile = await getProfile(uid);
       const current = targetProfile?.badges || [];
@@ -187,7 +268,8 @@ watchAuth(async (user) => {
         badges: [...current, badge]
       });
 
-      alert("Insignia asignada ✔");
+      localStorage.setItem("badgesUpdated", "1");
+      alert(`Insignia "${badge.name}" asignada ✔`);
     };
 
   } catch (err) {
@@ -195,6 +277,3 @@ watchAuth(async (user) => {
     alert("Error en dashboard. Revisá la consola.");
   }
 });
-
-
-
